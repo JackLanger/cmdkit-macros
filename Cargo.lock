@@ -10,7 +10,7 @@ checksum = "19a796622d3e2d732539dc98b4a0ca2bcfd375934cf70e9f70c7652868ca3b7b"
 
 [[package]]
 name = "cmdkit-macros"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cmdkit",
  "proc-macro2",
