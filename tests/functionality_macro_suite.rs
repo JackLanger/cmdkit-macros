@@ -9,8 +9,8 @@ use cmdkit_macros::strategy;
 
 #[strategy]
 fn simple_cli_strategy(
-    _options: Vec<String>,
-    _arguments: std::collections::HashMap<String, String>,
+    _options: Vec<cmdkit::Switch>,
+    _arguments: Vec<cmdkit::Argument>,
     _subcommands: Vec<String>,
 ) -> Result<(), StrategyError> {
     Ok(())
@@ -40,12 +40,14 @@ fn strategy_attribute_generated_type_uses_upper_camel_name() {
 
 #[strategy]
 fn create_directory(
-    _options: Vec<String>,
-    arguments: std::collections::HashMap<String, String>,
+    _options: Vec<cmdkit::Switch>,
+    arguments: Vec<cmdkit::Argument>,
     _subcommands: Vec<String>,
 ) -> Result<(), StrategyError> {
     let path = arguments
-        .get("path")
+        .iter()
+        .find(|argument| argument.name == "path")
+        .and_then(|argument| argument.value.as_deref())
         .ok_or_else(|| StrategyError::invalid_arguments("missing path"))?;
 
     std::fs::create_dir(std::path::Path::new(path))

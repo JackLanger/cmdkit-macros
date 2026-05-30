@@ -5,8 +5,6 @@ version = 4
 [[package]]
 name = "cmdkit"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19a796622d3e2d732539dc98b4a0ca2bcfd375934cf70e9f70c7652868ca3b7b"
 
 [[package]]
 name = "cmdkit-macros"

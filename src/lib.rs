@@ -47,7 +47,7 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
                 _ => {
                     return syn::Error::new_spanned(
                         ty,
-                        "cli strategy functions must accept a Vec<String> options argument",
+                        "cli strategy functions must accept a Vec<Switch> options argument",
                     )
                     .into_compile_error()
                     .into();
@@ -59,7 +59,7 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
         _ => {
             return syn::Error::new_spanned(
                 &input_fn.sig,
-                "cli strategy functions must accept an options Vec<String> argument",
+                "cli strategy functions must accept an options Vec<Switch> argument",
             )
             .into_compile_error()
             .into();
@@ -74,11 +74,11 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
                         .path
                         .segments
                         .last()
-                        .is_some_and(|segment| segment.ident == "HashMap") => {}
+                        .is_some_and(|segment| segment.ident == "Vec") => {}
                 _ => {
                     return syn::Error::new_spanned(
                         ty,
-                        "cli strategy functions must accept a HashMap<String, String> arguments argument",
+                        "cli strategy functions must accept a Vec<Argument> arguments argument",
                     )
                     .into_compile_error()
                     .into();
@@ -90,7 +90,7 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
         _ => {
             return syn::Error::new_spanned(
                 &input_fn.sig,
-                "cli strategy functions must accept an arguments HashMap<String, String> argument",
+                "cli strategy functions must accept an arguments Vec<Argument> argument",
             )
             .into_compile_error()
             .into();
@@ -180,8 +180,8 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl ::cmdkit::CommandStrategy for #strategy_ident {
             fn execute(
                 &self,
-                #options_pat: Vec<String>,
-                #arguments_pat: ::std::collections::HashMap<String, String>,
+                #options_pat: Vec<::cmdkit::Switch>,
+                #arguments_pat: Vec<::cmdkit::Argument>,
                 #subcommands_pat: Vec<String>,
             ) -> Result<(), ::cmdkit::StrategyError> {
                 #body

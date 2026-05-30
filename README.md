@@ -30,17 +30,19 @@ cmdkit-macros = "0.1"
 ## Quick Example
 
 ```rust
-use cmdkit::{CliCore, Command, StrategyError};
+use cmdkit::{Argument, CliCore, Command, StrategyError, Switch};
 use cmdkit_macros::strategy;
 
 #[strategy]
 fn create_directory(
-    _options: Vec<String>,
-    arguments: std::collections::HashMap<String, String>,
+    _options: Vec<Switch>,
+    arguments: Vec<Argument>,
     _subcommands: Vec<String>,
 ) -> Result<(), StrategyError> {
     let path = arguments
-        .get("path")
+        .iter()
+        .find(|argument| argument.name == "path")
+        .and_then(|argument| argument.value.as_deref())
         .ok_or_else(|| StrategyError::invalid_arguments("missing path"))?;
 
     std::fs::create_dir(std::path::Path::new(path))
@@ -67,8 +69,8 @@ A function annotated with `#[strategy]` must:
 1. Be a free function (not a method).
 2. Not be `async`.
 3. Accept exactly these three parameters in this order:
-   - `options: Vec<String>`
-   - `arguments: HashMap<String, String>`
+    - `options: Vec<Switch>`
+    - `arguments: Vec<Argument>`
    - `subcommands: Vec<String>`
 4. Return `Result<(), cmdkit::StrategyError>`.
 
@@ -77,8 +79,8 @@ Example accepted shape:
 ```rust
 #[strategy]
 fn my_command(
-    options: Vec<String>,
-    arguments: std::collections::HashMap<String, String>,
+    options: Vec<cmdkit::Switch>,
+    arguments: Vec<cmdkit::Argument>,
     subcommands: Vec<String>,
 ) -> Result<(), cmdkit::StrategyError> {
     let _ = (options, arguments, subcommands);
@@ -100,8 +102,8 @@ For:
 ```rust
 #[strategy]
 fn sample_name(
-    options: Vec<String>,
-    arguments: std::collections::HashMap<String, String>,
+    options: Vec<cmdkit::Switch>,
+    arguments: Vec<cmdkit::Argument>,
     subcommands: Vec<String>,
 ) -> Result<(), cmdkit::StrategyError> {
     Ok(())
@@ -122,8 +124,8 @@ impl SampleName {
 impl cmdkit::CommandStrategy for SampleName {
     fn execute(
         &self,
-        options: Vec<String>,
-        arguments: std::collections::HashMap<String, String>,
+        options: Vec<cmdkit::Switch>,
+        arguments: Vec<cmdkit::Argument>,
         subcommands: Vec<String>,
     ) -> Result<(), cmdkit::StrategyError> {
         let _ = (options, arguments, subcommands);
