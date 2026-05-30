@@ -24,4 +24,4 @@ quote = "1"
 syn = { version = "2", features = ["full"] }
 
 [dev-dependencies]
-cmdkit = { path = "../cmdkit" }
+cmdkit = "0.2.0"
