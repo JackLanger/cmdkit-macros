@@ -1,0 +1,5 @@
+error: cli strategy functions must accept a Vec<Switch> options argument
+ --> tests/ui/strategy_wrong_signature.rs:5:14
+  |
+5 |     options: Vec<u32>,
+  |              ^^^^^^^^

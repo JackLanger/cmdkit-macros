@@ -1,6 +1,8 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{FnArg, ItemFn, PatType, ReturnType, Type, parse_macro_input};
+use syn::{
+    FnArg, GenericArgument, ItemFn, PatType, PathArguments, ReturnType, Type, parse_macro_input,
+};
 
 #[proc_macro_attribute]
 pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -37,21 +39,15 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let options_pat = match inputs.next() {
         Some(FnArg::Typed(PatType { pat, ty, .. })) => {
-            match ty.as_ref() {
-                Type::Path(path)
-                    if path
-                        .path
-                        .segments
-                        .last()
-                        .is_some_and(|segment| segment.ident == "Vec") => {}
-                _ => {
-                    return syn::Error::new_spanned(
-                        ty,
-                        "cli strategy functions must accept a Vec<Switch> options argument",
-                    )
-                    .into_compile_error()
-                    .into();
-                }
+            if !matches_vec_of_path(ty.as_ref(), &["Switch"])
+                && !matches_vec_of_path(ty.as_ref(), &["cmdkit", "Switch"])
+            {
+                return syn::Error::new_spanned(
+                    ty,
+                    "cli strategy functions must accept a Vec<Switch> options argument",
+                )
+                .into_compile_error()
+                .into();
             }
 
             pat
@@ -68,21 +64,15 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let arguments_pat = match inputs.next() {
         Some(FnArg::Typed(PatType { pat, ty, .. })) => {
-            match ty.as_ref() {
-                Type::Path(path)
-                    if path
-                        .path
-                        .segments
-                        .last()
-                        .is_some_and(|segment| segment.ident == "Vec") => {}
-                _ => {
-                    return syn::Error::new_spanned(
-                        ty,
-                        "cli strategy functions must accept a Vec<Argument> arguments argument",
-                    )
-                    .into_compile_error()
-                    .into();
-                }
+            if !matches_vec_of_path(ty.as_ref(), &["Argument"])
+                && !matches_vec_of_path(ty.as_ref(), &["cmdkit", "Argument"])
+            {
+                return syn::Error::new_spanned(
+                    ty,
+                    "cli strategy functions must accept a Vec<Argument> arguments argument",
+                )
+                .into_compile_error()
+                .into();
             }
 
             pat
@@ -108,21 +98,16 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
                 .into();
             }
 
-            match ty.as_ref() {
-                Type::Path(path)
-                    if path
-                        .path
-                        .segments
-                        .last()
-                        .is_some_and(|segment| segment.ident == "Vec") => {}
-                _ => {
-                    return syn::Error::new_spanned(
-                        ty,
-                        "cli strategy functions must accept a Vec<String> subcommands argument",
-                    )
-                    .into_compile_error()
-                    .into();
-                }
+            if !matches_vec_of_path(ty.as_ref(), &["String"])
+                && !matches_vec_of_path(ty.as_ref(), &["std", "string", "String"])
+                && !matches_vec_of_path(ty.as_ref(), &["alloc", "string", "String"])
+            {
+                return syn::Error::new_spanned(
+                    ty,
+                    "cli strategy functions must accept a Vec<String> subcommands argument",
+                )
+                .into_compile_error()
+                .into();
             }
 
             pat
@@ -140,7 +125,9 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
     match &input_fn.sig.output {
         ReturnType::Type(_, ty) => match ty.as_ref() {
             Type::Path(path)
-                if path.path.segments.len() == 1 && path.path.segments[0].ident == "Result" => {}
+                if path.path.segments.len() == 1
+                    && path.path.segments[0].ident == "Result"
+                    && matches_result_type(&path.path) => {}
             _ => {
                 return syn::Error::new_spanned(
                     ty,
@@ -209,4 +196,63 @@ fn to_pascal(s: &str) -> String {
         }
     }
     out
+}
+
+fn matches_vec_of_path(ty: &Type, expected_segments: &[&str]) -> bool {
+    let Type::Path(path) = ty else {
+        return false;
+    };
+
+    let Some(last_segment) = path.path.segments.last() else {
+        return false;
+    };
+
+    if last_segment.ident != "Vec" {
+        return false;
+    }
+
+    let PathArguments::AngleBracketed(arguments) = &last_segment.arguments else {
+        return false;
+    };
+
+    let Some(GenericArgument::Type(inner_type)) = arguments.args.first() else {
+        return false;
+    };
+
+    matches_path_segments(inner_type, expected_segments)
+}
+
+fn matches_result_type(path: &syn::Path) -> bool {
+    let Some(last_segment) = path.segments.last() else {
+        return false;
+    };
+
+    let PathArguments::AngleBracketed(arguments) = &last_segment.arguments else {
+        return false;
+    };
+
+    let mut args = arguments.args.iter();
+
+    matches!(args.next(), Some(GenericArgument::Type(Type::Tuple(tuple))) if tuple.elems.is_empty())
+        && matches!(
+            args.next(),
+            Some(GenericArgument::Type(inner_type)) if matches_path_segments(inner_type, &["StrategyError"])
+                || matches_path_segments(inner_type, &["cmdkit", "StrategyError"])
+        )
+        && args.next().is_none()
+}
+
+fn matches_path_segments(ty: &Type, expected_segments: &[&str]) -> bool {
+    let Type::Path(path) = ty else {
+        return false;
+    };
+
+    let actual_segments: Vec<_> = path
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect();
+
+    actual_segments == expected_segments
 }

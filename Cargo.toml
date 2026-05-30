@@ -1,6 +1,6 @@
 [package]
 name = "cmdkit-macros"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 description = "Procedural macros for cmdkit command strategy generation."
 license = "GPL-3.0-or-later"
@@ -25,3 +25,4 @@ syn = { version = "2", features = ["full"] }
 
 [dev-dependencies]
 cmdkit = "0.2.0"
+trybuild = "1"

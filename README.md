@@ -23,8 +23,8 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cmdkit = "0.1"
-cmdkit-macros = "0.1"
+cmdkit = "0.2.0"
+cmdkit-macros = "0.2.2"
 ```
 
 ## Quick Example

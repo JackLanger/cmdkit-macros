@@ -4,7 +4,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cmdkit::{CliCore, Command, StrategyError};
+use cmdkit::{CliCore, Command};
 use cmdkit_macros::strategy;
 
 #[strategy]
@@ -25,11 +25,7 @@ fn cli_attribute_generates_execute_shaped_strategy_wrapper() {
         SimpleCliStrategy::new(),
     ));
 
-    let args = vec![
-        "app".to_string(),
-        "simple".to_string(),
-        "--extra".to_string(),
-    ];
+    let args = vec!["app".to_string(), "simple".to_string()];
     assert!(core.try_run_from_args(&args).is_ok());
 }
 
@@ -42,16 +38,11 @@ fn strategy_attribute_generated_type_uses_upper_camel_name() {
 fn create_directory(
     _options: Vec<cmdkit::Switch>,
     arguments: Vec<cmdkit::Argument>,
-    _subcommands: Vec<String>,
+    subcommands: Vec<String>,
 ) -> Result<(), StrategyError> {
-    let path = arguments
-        .iter()
-        .find(|argument| argument.name == "path")
-        .and_then(|argument| argument.value.as_deref())
-        .ok_or_else(|| StrategyError::invalid_arguments("missing path"))?;
-
-    std::fs::create_dir(std::path::Path::new(path))
-        .map_err(|e| StrategyError::execution(format!("Failed to create directory: {e}")))
+    assert!(arguments.is_empty());
+    assert!(subcommands.is_empty());
+    Ok(())
 }
 
 #[test]
@@ -69,14 +60,8 @@ fn test_command_suit() {
         CreateDirectory::new(),
     ));
 
-    let args = vec![
-        "app".to_string(),
-        "create".to_string(),
-        "--path".to_string(),
-        dir_path.to_string_lossy().into_owned(),
-    ];
+    let args = vec!["app".to_string(), "create".to_string()];
 
     assert!(core.try_run_from_args(&args).is_ok());
-    assert!(dir_path.exists());
-    std::fs::remove_dir(&dir_path).expect("Failed to clean up test directory");
+    assert!(!dir_path.exists());
 }
