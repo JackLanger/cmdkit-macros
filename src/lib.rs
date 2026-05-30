@@ -1,15 +1,18 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{FnArg, ItemFn, PatType, Receiver, ReturnType, Type, parse_macro_input};
+use syn::{FnArg, ItemFn, PatType, ReturnType, Type, parse_macro_input};
 
 #[proc_macro_attribute]
-pub fn cli(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr_tokens: proc_macro2::TokenStream = attr.into();
 
     if !attr_tokens.is_empty() {
-        return syn::Error::new_spanned(attr_tokens, "cli attribute does not take any arguments")
-            .into_compile_error()
-            .into();
+        return syn::Error::new_spanned(
+            attr_tokens,
+            "strategy attribute does not take any arguments",
+        )
+        .into_compile_error()
+        .into();
     }
 
     let input_fn = parse_macro_input!(item as ItemFn);
@@ -21,30 +24,16 @@ pub fn cli(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     let mut inputs = input_fn.sig.inputs.iter();
-    match inputs.next() {
-        Some(FnArg::Receiver(Receiver {
-            reference: Some(_),
-            mutability: _,
-            attrs,
-            ..
-        })) if attrs.is_empty() => {}
-        Some(FnArg::Receiver(_)) => {
-            return syn::Error::new_spanned(
-                &input_fn.sig,
-                "cli strategy methods must use an attribute-free &self receiver",
-            )
-            .into_compile_error()
-            .into();
-        }
-        _ => {
-            return syn::Error::new_spanned(
-                &input_fn.sig,
-                "cli strategy functions must match CommandStrategy::execute with an &self receiver and options, arguments, and subcommands arguments",
-            )
-            .into_compile_error()
-            .into();
-        }
+    if let Some(FnArg::Receiver(_)) = inputs.next() {
+        return syn::Error::new_spanned(
+            &input_fn.sig,
+            "cli strategy functions must be plain free functions; remove the &self receiver and keep options, arguments, and subcommands arguments",
+        )
+        .into_compile_error()
+        .into();
     }
+
+    let mut inputs = input_fn.sig.inputs.iter();
 
     let options_pat = match inputs.next() {
         Some(FnArg::Typed(PatType { pat, ty, .. })) => {

@@ -5,11 +5,10 @@ use std::{
 };
 
 use cmdkit::{CliCore, Command, StrategyError};
-use cmdkit_macros::cli;
+use cmdkit_macros::strategy;
 
-#[cli]
+#[strategy]
 fn simple_cli_strategy(
-    &self,
     _options: Vec<String>,
     _arguments: std::collections::HashMap<String, String>,
     _subcommands: Vec<String>,
@@ -35,13 +34,12 @@ fn cli_attribute_generates_execute_shaped_strategy_wrapper() {
 }
 
 #[test]
-fn cli_attribute_generated_type_uses_upper_camel_name() {
+fn strategy_attribute_generated_type_uses_upper_camel_name() {
     let _instance = SimpleCliStrategy::new();
 }
 
-#[cli]
+#[strategy]
 fn create_directory(
-    &self,
     _options: Vec<String>,
     arguments: std::collections::HashMap<String, String>,
     _subcommands: Vec<String>,

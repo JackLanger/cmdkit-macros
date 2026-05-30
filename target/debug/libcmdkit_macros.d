@@ -1,1 +1,1 @@
-/home/jack/Projects/cmdkit/cmdkit-macros/target/debug/libcmdkit_macros.so: /home/jack/Projects/cmdkit/cmdkit-macros/target/package/cmdkit-macros-0.1.0/src/lib.rs
+/home/jack/Projects/cmdkit-macros/target/debug/libcmdkit_macros.so: /home/jack/Projects/cmdkit-macros/src/lib.rs
