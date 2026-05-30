@@ -6,11 +6,14 @@ description = "Procedural macros for cmdkit command strategy generation."
 license = "GPL-3.0-or-later"
 repository = "https://github.com/JackLanger/CMDKit-macros"
 documentation = "https://docs.rs/cmdkit-macros"
+readme = "README.md"
+rust-version = "1.85"
 keywords = ["cli", "macro", "proc-macro"]
 categories = [
     "development-tools::procedural-macro-helpers",
     "command-line-interface",
 ]
+include = ["src/**", "tests/**", "Cargo.toml", "README.md", "LICENSE*"]
 
 [lib]
 proc-macro = true
