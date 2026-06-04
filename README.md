@@ -35,11 +35,10 @@ use cmdkit_macros::strategy;
 
 #[strategy]
 fn create_directory(
-    _options: Vec<Switch>,
-    arguments: Vec<Argument>,
-    _subcommands: Vec<String>,
+    ctx: ExecutionContext,
+    invocation_args: InvocationArgs
 ) -> Result<(), StrategyError> {
-    let path = arguments
+    let path = invocation_args.args
         .iter()
         .find(|argument| argument.name == "path")
         .and_then(|argument| argument.value.as_deref())
@@ -69,9 +68,8 @@ A function annotated with `#[strategy]` must:
 1. Be a free function (not a method).
 2. Not be `async`.
 3. Accept exactly these three parameters in this order:
-    - `options: Vec<Switch>`
-    - `arguments: Vec<Argument>`
-   - `subcommands: Vec<String>`
+    - `ctx: ExecutionContext`
+    - `arguments: InvocationArgs`
 4. Return `Result<(), cmdkit::StrategyError>`.
 
 Example accepted shape:
@@ -79,11 +77,10 @@ Example accepted shape:
 ```rust
 #[strategy]
 fn my_command(
-    options: Vec<cmdkit::Switch>,
-    arguments: Vec<cmdkit::Argument>,
-    subcommands: Vec<String>,
+    ctx: ExecutionContext
+    args: InvocationArgs
 ) -> Result<(), cmdkit::StrategyError> {
-    let _ = (options, arguments, subcommands);
+    let _ = (ctx, args);
     Ok(())
 }
 ```
@@ -102,9 +99,8 @@ For:
 ```rust
 #[strategy]
 fn sample_name(
-    options: Vec<cmdkit::Switch>,
-    arguments: Vec<cmdkit::Argument>,
-    subcommands: Vec<String>,
+    ctx: ExecutionContext
+    args: InvocationArgs
 ) -> Result<(), cmdkit::StrategyError> {
     Ok(())
 }
@@ -124,11 +120,10 @@ impl SampleName {
 impl cmdkit::CommandStrategy for SampleName {
     fn execute(
         &self,
-        options: Vec<cmdkit::Switch>,
-        arguments: Vec<cmdkit::Argument>,
-        subcommands: Vec<String>,
+        ctx: ExecutionContext
+        args: InvocationArgs
     ) -> Result<(), cmdkit::StrategyError> {
-        let _ = (options, arguments, subcommands);
+        let _ = (ctx, args);
         Ok(())
     }
 }
@@ -148,4 +143,4 @@ cargo test
 
 ## License
 
-GPL-3.0-or-later
+This project is licensed under Apache-2.0. See [LICENSE](LICENSE) for details.later
