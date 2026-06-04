@@ -37,14 +37,12 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let mut inputs = input_fn.sig.inputs.iter();
 
-    let options_pat = match inputs.next() {
+    let ctx_pat = match inputs.next() {
         Some(FnArg::Typed(PatType { pat, ty, .. })) => {
-            if !matches_vec_of_path(ty.as_ref(), &["Switch"])
-                && !matches_vec_of_path(ty.as_ref(), &["cmdkit", "Switch"])
-            {
+            if !matches_execution_context(ty.as_ref()) {
                 return syn::Error::new_spanned(
                     ty,
-                    "cli strategy functions must accept a Vec<Switch> options argument",
+                    "strategy annotated functions must accept an cmdkit::ExecutionContext",
                 )
                 .into_compile_error()
                 .into();
@@ -55,7 +53,7 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
         _ => {
             return syn::Error::new_spanned(
                 &input_fn.sig,
-                "cli strategy functions must accept an options Vec<Switch> argument",
+                "strategy functions must accept an cmdkit::ExecutionContext argument",
             )
             .into_compile_error()
             .into();
@@ -64,12 +62,12 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let arguments_pat = match inputs.next() {
         Some(FnArg::Typed(PatType { pat, ty, .. })) => {
-            if !matches_vec_of_path(ty.as_ref(), &["Argument"])
-                && !matches_vec_of_path(ty.as_ref(), &["cmdkit", "Argument"])
+            if !matches_path_segments(ty.as_ref(), &[stringify!(InvocationArgs)])
+                && !matches_path_segments(ty.as_ref(), &["cmdkit", stringify!(InvocationArgs)])
             {
                 return syn::Error::new_spanned(
                     ty,
-                    "cli strategy functions must accept a Vec<Argument> arguments argument",
+                    "strategy annotated functions must accept an cmdkit::InvocationArgs arguments argument",
                 )
                 .into_compile_error()
                 .into();
@@ -80,42 +78,7 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
         _ => {
             return syn::Error::new_spanned(
                 &input_fn.sig,
-                "cli strategy functions must accept an arguments Vec<Argument> argument",
-            )
-            .into_compile_error()
-            .into();
-        }
-    };
-
-    let subcommands_pat = match inputs.next() {
-        Some(FnArg::Typed(PatType { pat, ty, .. })) => {
-            if inputs.next().is_some() {
-                return syn::Error::new_spanned(
-                    &input_fn.sig,
-                    "cli strategy functions must accept exactly three parsed invocation arguments",
-                )
-                .into_compile_error()
-                .into();
-            }
-
-            if !matches_vec_of_path(ty.as_ref(), &["String"])
-                && !matches_vec_of_path(ty.as_ref(), &["std", "string", "String"])
-                && !matches_vec_of_path(ty.as_ref(), &["alloc", "string", "String"])
-            {
-                return syn::Error::new_spanned(
-                    ty,
-                    "cli strategy functions must accept a Vec<String> subcommands argument",
-                )
-                .into_compile_error()
-                .into();
-            }
-
-            pat
-        }
-        _ => {
-            return syn::Error::new_spanned(
-                &input_fn.sig,
-                "cli strategy functions must accept a subcommands Vec<String> argument",
+                "strategy annotated functions must accept an cmdkit::InvocationArgs arguments argument",
             )
             .into_compile_error()
             .into();
@@ -131,7 +94,7 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
             _ => {
                 return syn::Error::new_spanned(
                     ty,
-                    "cli strategy functions must return Result<(), cmdkit::StrategyError>",
+                    "strategy annotated functions must return Result<(), cmdkit::StrategyError>",
                 )
                 .into_compile_error()
                 .into();
@@ -140,7 +103,7 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
         ReturnType::Default => {
             return syn::Error::new_spanned(
                 &input_fn.sig,
-                "cli strategy functions must return Result<(), cmdkit::StrategyError>",
+                "strategy annotated functions must return Result<(), cmdkit::StrategyError>",
             )
             .into_compile_error()
             .into();
@@ -167,9 +130,8 @@ pub fn strategy(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl ::cmdkit::CommandStrategy for #strategy_ident {
             fn execute(
                 &self,
-                #options_pat: Vec<::cmdkit::Switch>,
-                #arguments_pat: Vec<::cmdkit::Argument>,
-                #subcommands_pat: Vec<String>,
+                #ctx_pat: &::cmdkit::ExecutionContext,
+                #arguments_pat: ::cmdkit::InvocationArgs,
             ) -> Result<(), ::cmdkit::StrategyError> {
                 #body
             }
@@ -198,28 +160,18 @@ fn to_pascal(s: &str) -> String {
     out
 }
 
-fn matches_vec_of_path(ty: &Type, expected_segments: &[&str]) -> bool {
-    let Type::Path(path) = ty else {
-        return false;
-    };
-
-    let Some(last_segment) = path.path.segments.last() else {
-        return false;
-    };
-
-    if last_segment.ident != "Vec" {
-        return false;
-    }
-
-    let PathArguments::AngleBracketed(arguments) = &last_segment.arguments else {
-        return false;
-    };
-
-    let Some(GenericArgument::Type(inner_type)) = arguments.args.first() else {
-        return false;
-    };
-
-    matches_path_segments(inner_type, expected_segments)
+fn matches_execution_context(ty: &Type) -> bool {
+    matches_path_segments(ty, &[stringify!(ExecutionContext)])
+        || matches_path_segments(ty, &["cmdkit", stringify!(ExecutionContext)])
+        || matches!(
+            ty,
+            Type::Reference(reference)
+                if matches_path_segments(reference.elem.as_ref(), &[stringify!(ExecutionContext)])
+                    || matches_path_segments(
+                        reference.elem.as_ref(),
+                        &["cmdkit", stringify!(ExecutionContext)]
+                    )
+        )
 }
 
 fn matches_result_type(path: &syn::Path) -> bool {

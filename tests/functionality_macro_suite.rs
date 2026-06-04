@@ -4,26 +4,26 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cmdkit::{CliCore, Command};
+use cmdkit::{CMDKit, Command};
 use cmdkit_macros::strategy;
 
 #[strategy]
 fn simple_cli_strategy(
-    _options: Vec<cmdkit::Switch>,
-    _arguments: Vec<cmdkit::Argument>,
-    _subcommands: Vec<String>,
-) -> Result<(), StrategyError> {
+    _ctx: cmdkit::ExecutionContext,
+    _args: cmdkit::InvocationArgs,
+) -> Result<(), cmdkit::StrategyError> {
     Ok(())
 }
 
 #[test]
 fn cli_attribute_generates_execute_shaped_strategy_wrapper() {
-    let core = CliCore::new();
-    core.register(Command::new(
-        "simple",
-        "simple cli strategy",
-        SimpleCliStrategy::new(),
-    ));
+    let core = CMDKit::builder()
+        .register(Command::new(
+            "simple",
+            "simple cli strategy",
+            SimpleCliStrategy::new(),
+        ))
+        .build();
 
     let args = vec!["app".to_string(), "simple".to_string()];
     assert!(core.try_run_from_args(&args).is_ok());
@@ -36,12 +36,10 @@ fn strategy_attribute_generated_type_uses_upper_camel_name() {
 
 #[strategy]
 fn create_directory(
-    _options: Vec<cmdkit::Switch>,
-    arguments: Vec<cmdkit::Argument>,
-    subcommands: Vec<String>,
-) -> Result<(), StrategyError> {
-    assert!(arguments.is_empty());
-    assert!(subcommands.is_empty());
+    _ctx: cmdkit::ExecutionContext,
+    args: cmdkit::InvocationArgs,
+) -> Result<(), cmdkit::StrategyError> {
+    assert!(!args.name.is_empty());
     Ok(())
 }
 
@@ -53,12 +51,13 @@ fn test_command_suit() {
         .as_nanos();
     let dir_path: PathBuf = env::temp_dir().join(format!("cli-core-create-{unique}"));
 
-    let core = CliCore::new();
-    core.register(Command::new(
-        "create",
-        "Create a directory",
-        CreateDirectory::new(),
-    ));
+    let core = CMDKit::builder()
+        .register(Command::new(
+            "create",
+            "Create a directory",
+            CreateDirectory::new(),
+        ))
+        .build();
 
     let args = vec!["app".to_string(), "create".to_string()];
 

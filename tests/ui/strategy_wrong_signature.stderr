@@ -1,5 +1,5 @@
-error: cli strategy functions must accept a Vec<Switch> options argument
- --> tests/ui/strategy_wrong_signature.rs:5:14
+error: strategy annotated functions must accept an cmdkit::InvocationArgs arguments argument
+ --> tests/ui/strategy_wrong_signature.rs:6:16
   |
-5 |     options: Vec<u32>,
-  |              ^^^^^^^^
+6 |     arguments: Vec<cmdkit::Argument>,
+  |                ^^^^^^^^^^^^^^^^^^^^^
